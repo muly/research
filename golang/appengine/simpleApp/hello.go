@@ -9,6 +9,8 @@ import (
 	"appengine"
 	"appengine/datastore"
 	"appengine/user"
+
+	"github.com/gorilla/mux"
 )
 
 // [START greeting_struct]
@@ -21,8 +23,16 @@ type Greeting struct {
 // [END greeting_struct]
 
 func init() {
-	http.HandleFunc("/", root)
-	http.HandleFunc("/sign", sign)
+	h := Handlers()
+	http.Handle("/", h)
+}
+
+func Handlers() http.Handler {
+	h := mux.NewRouter()
+	h.HandleFunc("/", root)
+	h.HandleFunc("/sign", sign)
+
+	return h
 }
 
 // guestbookKey returns the key used for all guestbook entries.
