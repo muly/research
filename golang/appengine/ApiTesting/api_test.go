@@ -1,36 +1,57 @@
-package main
+package logr
 
 import (
-	"fmt"
-	//"net/http"
+	//"fmt"
+	"net/http"
+	"net/http/httptest"
 	//"strings"
-	//"testing"
+	"testing"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/aetest"
 )
 
 var (
-	Instance aetest.Instance
+	Instance   aetest.Instance
+	testserver *httptest.Server
+	goalUrl    string
 )
 
-func main() {
+func init() {
+	testserver = httptest.NewServer(Handlers())
+
+	goalUrl = testserver.URL + "/goal/test1"
+
+}
+
+func TestGoalGet(t *testing.T) {
 	opt := &aetest.Options{AppID: "unittest", StronglyConsistentDatastore: true}
 	inst, err := aetest.NewInstance(opt)
 	if err != nil {
-		fmt.Println(err.Error())
+		t.Error(err.Error())
+	}
+	defer inst.Close()
+
+	req, err := inst.NewRequest("GET", goalUrl, nil)
+	if err != nil {
+		t.Error(err.Error())
 	}
 
-	req, err := inst.NewRequest("GET", "/", nil)
-	if err != nil {
+	c := appengine.NewContext(req)
+	/*	if err != nil {
 		fmt.Println(err.Error())
+	}*/
+
+	t.Log(c)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Error(err)
 	}
 
-	appengine.NewContext(req)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	//fmt.Println(c)
+	t.Log(res)
+
+	t.Log(goalUrl)
 
 	/*
 		//
