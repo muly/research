@@ -7,8 +7,10 @@ import (
 	//"strings"
 	"testing"
 
-	"google.golang.org/appengine"
+	//"google.golang.org/appengine"
 	"google.golang.org/appengine/aetest"
+
+	gorillacontext "github.com/gorilla/context"
 )
 
 var (
@@ -25,7 +27,7 @@ func init() {
 }
 
 func TestGoalGet(t *testing.T) {
-	opt := &aetest.Options{AppID: "unittest", StronglyConsistentDatastore: true}
+	/*opt := &aetest.Options{AppID: "unittest", StronglyConsistentDatastore: true}
 	inst, err := aetest.NewInstance(opt)
 	if err != nil {
 		t.Error(err.Error())
@@ -38,13 +40,37 @@ func TestGoalGet(t *testing.T) {
 	}
 
 	c := appengine.NewContext(req)
-	/*	if err != nil {
+		if err != nil {
 		fmt.Println(err.Error())
-	}*/
+	}
+
 
 	t.Log(c)
+	*/
 
-	res, err := http.DefaultClient.Do(req)
+	ctx, done, err := aetest.NewContext()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer done()
+
+	t.Log(ctx)
+
+	h := Handlers()
+	record := httptest.NewRecorder()
+
+	req, err := http.NewRequest("GET", goalUrl, nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	gorillacontext.Set(req, "Context", ctx)
+
+	h.ServeHTTP(record, req)
+
+	t.Log(record.Code)
+
+	/*res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Error(err)
 	}
@@ -52,6 +78,7 @@ func TestGoalGet(t *testing.T) {
 	t.Log(res)
 
 	t.Log(goalUrl)
+	*/
 
 	/*
 		//
