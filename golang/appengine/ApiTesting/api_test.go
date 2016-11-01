@@ -2,16 +2,15 @@ package logr
 
 import (
 	//"fmt"
-	//"net/http"
+	"net/http"
 	"net/http/httptest"
 	//"strings"
 	"testing"
 
 	//"google.golang.org/appengine"
-	//"google.golang.org/appengine"
+	gorillacontext "github.com/gorilla/context"
 	"google.golang.org/appengine/aetest"
-	"google.golang.org/appengine/urlfetch"
-	//gorillacontext "github.com/gorilla/context"
+	//"google.golang.org/appengine/urlfetch"
 )
 
 var (
@@ -21,13 +20,17 @@ var (
 )
 
 func init() {
-	testserver = httptest.NewServer(Handlers())
 
-	goalUrl = testserver.URL + "/goal/test1"
+	//goalUrl = "http://localhost:8080/goal/test1"
 
 }
 
 func TestGoalGet(t *testing.T) {
+
+	testserver = httptest.NewServer(Handlers())
+
+	goalUrl = testserver.URL + "/goal/test1"
+	defer testserver.Close()
 	/*opt := &aetest.Options{AppID: "unittest", StronglyConsistentDatastore: true}
 	inst, err := aetest.NewInstance(opt)
 	if err != nil {
@@ -49,23 +52,7 @@ func TestGoalGet(t *testing.T) {
 	t.Log(c)
 	*/
 
-	//ctx := appengine.NewContext(r)
 	ctx, done, err := aetest.NewContext()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer done()
-
-	client := urlfetch.Client(ctx)
-
-	res, err := client.Get(goalUrl)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Log(res.Status)
-
-	/*ctx, done, err := aetest.NewContext()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +71,7 @@ func TestGoalGet(t *testing.T) {
 	gorillacontext.Set(req, "Context", ctx)
 
 	h.ServeHTTP(record, req)
-	t.Log(record.Code)*/
+	t.Log(record.Code)
 
 	/*res, err := http.DefaultClient.Do(req)
 	if err != nil {
