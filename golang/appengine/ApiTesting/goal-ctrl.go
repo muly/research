@@ -2,10 +2,11 @@ package logr
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
-	context2 "github.com/gorilla/context"
+	gorillacontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -26,11 +27,12 @@ func HandleGoalGet(w http.ResponseWriter, r *http.Request) {
 	//c := appengine.NewContext(r)
 	var c context.Context
 
-	if val, ok := context2.GetOk(r, "Context"); ok {
+	if val, ok := gorillacontext.GetOk(r, "Context"); ok {
 		c = val.(context.Context)
 	} else {
 		c = appengine.NewContext(r)
 	}
+	fmt.Println("######################", r.URL)
 
 	params := mux.Vars(r)
 
