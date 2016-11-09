@@ -1,103 +1,77 @@
 package logr
 
 import (
-	//"fmt"
 	"net/http"
 	"net/http/httptest"
-	//"strings"
 	"testing"
 
-	//"google.golang.org/appengine"
-	gorillacontext "github.com/gorilla/context"
+	"github.com/muly/aeunittest"
+
+	"golang.org/x/net/context"
 	"google.golang.org/appengine/aetest"
-	//"google.golang.org/appengine/urlfetch"
 )
 
 var (
-	Instance   aetest.Instance
 	testserver *httptest.Server
 	goalUrl    string
 )
 
 func init() {
-
-	//goalUrl = "http://localhost:8080/goal/test1"
+	testserver = httptest.NewServer(Handlers())
+	goalUrl = testserver.URL + "/goal"
 
 }
 
-func TestGoalGet(t *testing.T) {
-
-	testserver = httptest.NewServer(Handlers())
-
-	goalUrl = testserver.URL + "/goal/test1"
-	defer testserver.Close()
-	/*opt := &aetest.Options{AppID: "unittest", StronglyConsistentDatastore: true}
-	inst, err := aetest.NewInstance(opt)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	defer inst.Close()
-
-	req, err := inst.NewRequest("GET", goalUrl, nil)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	c := appengine.NewContext(req)
-		if err != nil {
-		fmt.Println(err.Error())
-	}
-
-
-	t.Log(c)
-	*/
-
-	ctx, done, err := aetest.NewContext()
+func TestGoal(t *testing.T) {
+	c, done, err := aetest.NewContext()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer done()
 
-	t.Log(ctx)
-
 	h := Handlers()
-	record := httptest.NewRecorder()
 
-	req, err := http.NewRequest("GET", goalUrl, nil)
-	if err != nil {
-		t.Error(err.Error())
+	testGoal(t, c, h)
+
+}
+
+func testGoal(t *testing.T, c context.Context, h http.Handler) {
+	tcs := aeunittest.TestCases{}
+	tc := aeunittest.TestCase{}
+
+	//reset (tc), input (tc), append (to tcs) the test cases one after the other
+	tc = aeunittest.TestCase{} // reset
+	//input
+	tc.Name = "Goal Post new record test"
+	tc.RequestBody = `{"Name":"test1","Notes":"test"}`
+	tc.HttpVerb = "POST"
+	tc.Uri = goalUrl
+	tc.WantStatusCode = http.StatusCreated
+	tcs = append(tcs, tc) // append
+
+	tc = aeunittest.TestCase{}
+	tc.Name = "Goal Post duplicate record test"
+	tc.RequestBody = `{"Name":"test1","Notes":"test"}`
+	tc.HttpVerb = "POST"
+	tc.Uri = goalUrl
+	tc.WantStatusCode = http.StatusBadRequest
+	tcs = append(tcs, tc)
+
+	tc = aeunittest.TestCase{}
+	tc.Name = "Goal Get existing record test"
+	tc.RequestBody = ``
+	tc.HttpVerb = "GET"
+	tc.Uri = goalUrl + "/test1"
+	tc.WantStatusCode = http.StatusOK
+	tcs = append(tcs, tc)
+
+	for _, tc := range tcs { // run each test case
+		// set the common parameters related to webapp and testing.
+		tc.Context = c
+		tc.Handler = h
+		tc.T = t
+
+		tc.Run()
 	}
-
-	gorillacontext.Set(req, "Context", ctx)
-
-	h.ServeHTTP(record, req)
-	t.Log(record.Code)
-
-	/*res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Error(err)
-	}
-
-	t.Log(res)*/
-
-	//t.Log(goalUrl)
-
-	/*
-		//
-		//
-		//
-		//
-		//
-		//
-		body := strings.NewReader("")
-
-		request, err := http.NewRequest("GET", "", body) //inst.NewRequest("GET", goalUrl, body) //
-		if err != nil {
-			t.Error(err)
-		}
-		t.Log(request)
-
-		c := appengine.NewContext(request) // ERROR: appengine: NewContext passed an unknown http.Request
-		t.Log(c)*/
 
 }

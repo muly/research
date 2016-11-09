@@ -30,6 +30,7 @@ func Handlers() *mux.Router {
 	//r.HandleFunc("/", handler).Methods("GET")
 
 	r.HandleFunc("/goal/{goal}", HandleGoalGet).Methods("GET")
+	r.HandleFunc("/goal", HandleGoalPost).Methods("POST")
 
 	return r
 

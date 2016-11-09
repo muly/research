@@ -2,7 +2,6 @@ package logr
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -32,7 +31,6 @@ func HandleGoalGet(w http.ResponseWriter, r *http.Request) {
 	} else {
 		c = appengine.NewContext(r)
 	}
-	fmt.Println("######################", r.URL)
 
 	params := mux.Vars(r)
 
@@ -47,7 +45,6 @@ func HandleGoalGet(w http.ResponseWriter, r *http.Request) {
 
 	// if given goal is not found, return appropriate error
 	if err := goal.Get(c); err == ErrorNoMatch {
-		fmt.Println("###################### Error with goal.Get(c):", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	} else if err != nil {
@@ -73,4 +70,71 @@ func (goal *Goal) Get(c context.Context) (err error) {
 	}
 
 	return
+}
+
+func HandleGoalPost(w http.ResponseWriter, r *http.Request) {
+	//c := appengine.NewContext(r)
+	//fmt.Println("###################### HandleGoalPost:", r.URL)
+	//c := appengine.NewContext(r)
+	var c context.Context
+	if val, ok := gorillacontext.GetOk(r, "Context"); ok {
+		c = val.(context.Context)
+	} else {
+		c = appengine.NewContext(r)
+	}
+
+	goal := Goal{}
+
+	if err := json.NewDecoder(r.Body).Decode(&goal); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	//  if record already exists with the same goal name, then return
+	goalSrc := Goal{}
+	goalSrc.Name = goal.Name
+	if err := goalSrc.Get(c); err == ErrorNoMatch {
+		// do nothing
+	} else if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else {
+		http.Error(w, "record already exists", http.StatusBadRequest)
+		return
+	}
+
+	goal.CreatedOn = time.Now()
+
+	if err := goal.Put(c); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(goal); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
+
+// Put saves the goal record to database. In this case to Google Appengine Datastore. If already exists, the record will be overwritten.
+func (goal *Goal) Put(c context.Context) error {
+
+	// generate the key
+	key := datastore.NewKey(c, "Goal", goal.Name, 0, nil)
+
+	// put the record into the database and capture the key
+	key, err := datastore.Put(c, key, goal)
+	if err != nil {
+		return err
+	}
+
+	// read from database into the same variable
+	if err = datastore.Get(c, key, goal); err != nil {
+		return err
+	}
+
+	return err
 }
