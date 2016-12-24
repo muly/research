@@ -1,4 +1,4 @@
-// struct circle has area() method to satisfy the shape interface.
+// type circle has area() method to satisfy the shape interface.
 // so a variable of type shape can hold a object of circle type.
 // this is still true, if the circle struct has other methods that are not defined in the shape interface. in our example, circle struct has a perimeter method aswell, which is fine.
 // so, for a type to implement the interface, it should atleast have the methods that the interface defines.
