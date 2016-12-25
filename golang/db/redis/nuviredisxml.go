@@ -9,8 +9,8 @@ import (
 
 const (
 	redisSrv = "127.0.0.1:6379"
-	index    = "ProcessedRecords"
-	data     = "NEWS_XML"
+	index    = "s" //"ProcessedRecords"
+	data     = "l" //"NEWS_XML"
 )
 
 func main() {
@@ -22,11 +22,11 @@ func main() {
 	defer conn.Close()
 	fmt.Println("Hello Redis")
 
-	cleanup(conn)
-	return
+	//cleanup(conn)
+	//return
 
-	var xmlfilename string = "00a5e539322693f39d9923e196727419"
-	var xmldata string = "......................... 00a5e539322693f39d9923e196727419 ....................."
+	var xmlfilename string = "00a5e539322693f3"
+	var xmldata string = "......................... 00a5e539322693f39d9923e1967 ....................."
 
 	resp, err := conn.Do("SISMEMBER", index, xmlfilename)
 	if err != nil {
@@ -55,13 +55,26 @@ func main() {
 }
 
 func cleanup(conn redis.Conn) {
-	//for {
-	resp, err := conn.Do("SPOP", index, 1)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	fmt.Println("Response: ", resp == nil)
+	for {
+		resp, err := conn.Do("SPOP", index, 1)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		if reflect.DeepEqual(resp, []interface{}{}) {
+			break
+		}
 
-	//}
+	}
+
+	for {
+		resp, err := conn.Do("LPOP", data)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		if resp == nil {
+			break
+		}
+	}
 }
