@@ -1,12 +1,14 @@
 package main
 
 import (
+	"archive/zip"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/garyburd/redigo/redis"
@@ -57,12 +59,18 @@ func main() {
 
 	/*
 		////testing download function
-		fileName := "1482964046455.zip"
+		fileName := "1483281085309.zip"
 		url := "http://feed.omgili.com/5Rh5AMTrc4Pv/mainstream/posts/"
 		if err := download(fileName, url+fileName); err != nil {
 			fmt.Println(err)
 		}
 	*/
+
+	////testing unzip function
+	fileName := "1483281085309.zip"
+	if err := unZip(fileName); err != nil {
+		fmt.Println(err)
+	}
 
 	/*
 		 //// testing data.save function
@@ -71,13 +79,57 @@ func main() {
 		data.xmldata = "......................... 00a5e539322693f39d9923e1967 ....................."
 
 		if err := data.save(conn); err != nil {
-			fmt.Println(err.Error())
+			fmt.Println(err)
 		}*/
 
 	/*
 		cleanup(conn)
 		return
 	*/
+}
+
+func unZip(fileName string) error {
+	zipReader, err := zip.OpenReader(fileName)
+	defer zipReader.Close()
+	if err != nil {
+		return err
+	}
+
+	targetFolder := fileName[:strings.LastIndex(fileName, ".")]
+	if err := os.MkdirAll(targetFolder, 0755); err != nil {
+		return err
+	}
+
+	for i, f := range zipReader.File {
+		fmt.Println(i+1, f.Name)
+		if err := unZip1(f, targetFolder); err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
+
+// unZip1 unzips just one file from the zip to target.
+// advantage of seperating this from the parent function unZip() is to enable keeping the close calls with 'defer' (in the child func) even within the loop (in the parent func).
+func unZip1(f *zip.File, targetFolder string) (err error) {
+
+	fileReader, err := f.Open()
+	if err != nil {
+		return err
+	}
+	defer fileReader.Close()
+
+	dest, err := os.Create(targetFolder + "/" + f.Name)
+	if err != nil {
+		return err
+	}
+	defer dest.Close()
+
+	if _, err = io.Copy(dest, fileReader); err != nil {
+		return err
+	}
+	return
 }
 
 func (x xml) save(conn redis.Conn) error {
