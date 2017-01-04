@@ -52,3 +52,5 @@ func main() {
 	4 runtime.main
 	5 runtime.goexit
 */
+
+//Notes: inspired from http://talks.godoc.org/github.com/davecheney/presentations/gopher-puzzlers.slide#8
